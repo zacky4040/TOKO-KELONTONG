@@ -130,6 +130,7 @@
     <div class="keranjang-total" id="totalKasir">Total: Rp 0</div>
     <button onclick="bayar()">💳 Bayar</button>
     <button onclick="clearKeranjang()">🗑️ Kosongkan Keranjang</button>
+    <button onclick="cetakStruk()">🖨️ Cetak Struk</button>
   </aside>
 
   <script>
@@ -297,6 +298,32 @@
 
     renderItems(items);
     renderKeranjang();
+
+
   </script>
+  <script>
+    function cetakStruk() {
+      if (keranjang.length === 0) {
+        alert("Keranjang kosong!");
+        return;
+      }
+    
+      let struk = 'TOKO KELONTONG\n';
+      struk += '----------------------\n';
+      keranjang.forEach(item => {
+        struk += `${item.name} x${item.jumlah}\n`;
+        struk += `@Rp ${item.price.toLocaleString('id-ID')} = Rp ${(item.price * item.jumlah).toLocaleString('id-ID')}\n`;
+      });
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+      struk += '----------------------\n';
+      struk += `TOTAL: Rp ${total.toLocaleString('id-ID')}\n`;
+      struk += 'Terima kasih!\n';
+    
+      const encodedStruk = encodeURIComponent(struk);
+      const rawbtLink = `rawbt:${encodedStruk}`;
+      window.open(rawbtLink);
+    }
+    </script>
+    
 </body>
 </html>
