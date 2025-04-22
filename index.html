@@ -128,6 +128,8 @@
     <h3>🧾 Sistem Kasir</h3>
     <div id="keranjangList"></div>
     <div class="keranjang-total" id="totalKasir">Total: Rp 0</div>
+    <input type="number" id="uangBayar" placeholder="Uang dari pelanggan" />
+    <div class="keranjang-total" id="hasilKembalian">Kembalian: Rp 0</div>
     <button onclick="bayar()">💳 Bayar</button>
     <button onclick="clearKeranjang()">🗑️ Kosongkan Keranjang</button>
     <button onclick="cetakStruk()">🖨️ Cetak Struk</button>
@@ -291,39 +293,68 @@
         alert("Keranjang masih kosong!");
         return;
       }
+
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+  const uang = parseInt(document.getElementById('uangBayar').value);
+
+  if (isNaN(uang) || uang < total) {
+    alert("Uang tidak cukup!");
+    return;
+  }
+
+  const kembalian = uang - total;
+  document.getElementById('hasilKembalian').innerText = `Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`;
+
       alert("Pembayaran berhasil! Terima kasih.");
       keranjang = [];
       renderKeranjang();
+      document.getElementById('uangBayar').value = '';
     }
+    const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+  const uang = parseInt(document.getElementById('uangBayar').value);
 
+  if (isNaN(uang) || uang < total) {
+    alert("Uang tidak cukup!");
+    return;
+  }
+
+  const kembalian = uang - total;
+  document.getElementById('hasilKembalian').innerText = `Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`;
     renderItems(items);
     renderKeranjang();
 
 
   </script>
   <script>
-    function cetakStruk() {
-      if (keranjang.length === 0) {
-        alert("Keranjang kosong!");
-        return;
-      }
-    
-      let struk = 'TOKO FADIL\n';
-      struk += '----------------------\n';
-      keranjang.forEach(item => {
-        struk += `${item.name} x${item.jumlah}\n`;
-        struk += `@Rp ${item.price.toLocaleString('id-ID')} = Rp ${(item.price * item.jumlah).toLocaleString('id-ID')}\n`;
-      });
-      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
-      struk += '----------------------\n';
-      struk += `TOTAL: Rp ${total.toLocaleString('id-ID')}\n`;
-      struk += 'Terima kasih!\n';
-    
-      const encodedStruk = encodeURIComponent(struk);
-      const rawbtLink = `rawbt:${encodedStruk}`;
-      window.open(rawbtLink);
-    }
-    </script>
+   function cetakStruk() {
+  if (keranjang.length === 0) {
+    alert("Keranjang kosong!");
+    return;
+  }
+
+  const uang = parseInt(document.getElementById('uangBayar').value);
+  const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+  const kembalian = uang - total;
+
+  let struk = 'TOKO FADIL\n';
+  struk += '----------------------\n';
+  keranjang.forEach(item => {
+    struk += `${item.name} x${item.jumlah}\n`;
+    struk += `@Rp ${item.price.toLocaleString('id-ID')} = Rp ${(item.price * item.jumlah).toLocaleString('id-ID')}\n`;
+  });
+  struk += '----------------------\n';
+  struk += `TOTAL     : Rp ${total.toLocaleString('id-ID')}\n`;
+  if (!isNaN(uang)) {
+    struk += `UANG BAYAR: Rp ${uang.toLocaleString('id-ID')}\n`;
+    struk += `KEMBALIAN : Rp ${kembalian.toLocaleString('id-ID')}\n`;
+  }
+  struk += 'Terima kasih!\n';
+
+  const encodedStruk = encodeURIComponent(struk);
+  const rawbtLink = `rawbt:${encodedStruk}`;
+  window.open(rawbtLink);
+}
+</script>
     
 </body>
 </html>
