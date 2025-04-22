@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Toko Kelontong</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: #f3f4f6;
+      color: #333;
+      display: flex;
+    }
+    .container {
+      flex: 3;
+      padding: 20px;
+      max-width: 900px;
+    }
+    aside.kasir {
+      flex: 1;
+      background: #fff;
+      padding: 20px;
+      border-left: 2px solid #ddd;
+      min-width: 300px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    form, .search-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      border: none;
+    }
+    button:hover { background-color: #2980b9; }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: #ecf0f1;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .item-left { display: flex; flex-direction: column; flex: 1; }
+    .item-name { font-weight: 600; }
+    .price { color: #16a085; }
+    .category, .stok { font-size: 0.9rem; color: #555; }
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 5px;
+    }
+    .delete-btn { background-color: #e74c3c; }
+    .edit-btn { background-color: #f39c12; }
+    .cart-btn { background-color: #2ecc71; }
+    .delete-btn:hover { background-color: #c0392b; }
+    .edit-btn:hover { background-color: #d68910; }
+    .cart-btn:hover { background-color: #27ae60; }
+
+    .kasir h3 { margin-top: 0; }
+    .keranjang-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 5px;
+    }
+    .keranjang-total {
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .kasir button { width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Toko Kelontong</h1>
+
+    <form id="itemForm">
+      <input type="text" id="itemName" placeholder="Nama Barang" required />
+      <input type="number" id="itemPrice" placeholder="Harga Barang" required />
+      <input type="number" id="itemStock" placeholder="Stok Barang" required />
+      <select id="itemCategory" required>
+        <option value="">-- Pilih Kategori --</option>
+        <option value="Makanan">Makanan</option>
+        <option value="Minuman">Minuman</option>
+        <option value="Alat Rumah">Alat Rumah</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+      <button type="submit">+ Tambah</button>
+    </form>
+
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Cari Barang..." />
+      <button type="button" onclick="searchItems()">🔍 Cari</button>
+    </div>
+
+    <h2>📋 Daftar Barang</h2>
+    <ul id="itemList"></ul>
+  </div>
+
+  <aside class="kasir">
+    <h3>🧾 Sistem Kasir</h3>
+    <div id="keranjangList"></div>
+    <div class="keranjang-total" id="totalKasir">Total: Rp 0</div>
+    <button onclick="bayar()">💳 Bayar</button>
+    <button onclick="clearKeranjang()">🗑️ Kosongkan Keranjang</button>
+  </aside>
+
+  <script>
+    let items = JSON.parse(localStorage.getItem('items')) || [];
+    let keranjang = [];
+
+    const itemList = document.getElementById('itemList');
+    const keranjangList = document.getElementById('keranjangList');
+    const totalKasir = document.getElementById('totalKasir');
+    const form = document.getElementById('itemForm');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('itemName').value.trim();
+      const price = parseFloat(document.getElementById('itemPrice').value);
+      const stock = parseInt(document.getElementById('itemStock').value);
+      const category = document.getElementById('itemCategory').value;
+
+      if (name && !isNaN(price) && !isNaN(stock) && category) {
+        items.push({ name, price, stock, category });
+        localStorage.setItem('items', JSON.stringify(items));
+        renderItems(items);
+        form.reset();
+      }
+    });
+
+    function renderItems(data) {
+      itemList.innerHTML = '';
+      if (data.length === 0) {
+        itemList.innerHTML = '<li>Tidak ada barang.</li>';
+        return;
+      }
+
+      data.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="item-left">
+            <span class="item-name">${item.name}</span>
+            <span class="price">Rp ${item.price.toLocaleString('id-ID')}</span>
+            <span class="category">Kategori: ${item.category}</span>
+            <span class="stok">Stok: ${item.stock}</span>
+          </div>
+          <div class="btn-group">
+            <button class="cart-btn" onclick="tambahKeKeranjang(${index})">Keranjang</button>
+            <button class="edit-btn" onclick="editItem(${index})">Edit</button>
+            <button class="delete-btn" onclick="deleteItem(${index})">Hapus</button>
+          </div>
+        `;
+        itemList.appendChild(li);
+      });
+    }
+
+    function deleteItem(index) {
+      if (confirm('Yakin ingin menghapus barang ini?')) {
+        items.splice(index, 1);
+        localStorage.setItem('items', JSON.stringify(items));
+        renderItems(items);
+      }
+    }
+
+    function editItem(index) {
+      const item = items[index];
+      const newName = prompt("Edit Nama Barang:", item.name);
+      const newPrice = prompt("Edit Harga Barang:", item.price);
+      const newStock = prompt("Edit Stok Barang:", item.stock);
+      const newCategory = prompt("Edit Kategori:", item.category);
+
+      if (newName && newPrice && newStock && newCategory) {
+        items[index] = {
+          name: newName.trim(),
+          price: parseFloat(newPrice),
+          stock: parseInt(newStock),
+          category: newCategory.trim()
+        };
+        localStorage.setItem('items', JSON.stringify(items));
+        renderItems(items);
+      }
+    }
+
+    function searchItems() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = items.filter(item =>
+        item.name.toLowerCase().includes(keyword) ||
+        item.category.toLowerCase().includes(keyword)
+      );
+      renderItems(filtered);
+    }
+
+    function tambahKeKeranjang(index) {
+      const item = items[index];
+      if (item.stock <= 0) {
+        alert("Stok habis!");
+        return;
+      }
+
+      const qty = parseInt(prompt(`Masukkan jumlah untuk "${item.name}" (stok: ${item.stock})`, 1));
+      if (isNaN(qty) || qty < 1 || qty > item.stock) {
+        alert("Jumlah tidak valid!");
+        return;
+      }
+
+      keranjang.push({ ...item, jumlah: qty });
+      items[index].stock -= qty;
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+      renderKeranjang();
+    }
+
+    function renderKeranjang() {
+      keranjangList.innerHTML = '';
+      if (keranjang.length === 0) {
+        keranjangList.innerHTML = '<p>Keranjang kosong.</p>';
+        totalKasir.innerText = 'Total: Rp 0';
+        return;
+      }
+
+      keranjang.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.classList.add('keranjang-item');
+        const subtotal = item.price * item.jumlah;
+        div.innerHTML = `
+          <span>${item.name} (${item.jumlah}x)</span>
+          <span>Rp ${subtotal.toLocaleString('id-ID')}</span>
+          <button onclick="hapusKeranjang(${i})">❌</button>
+        `;
+        keranjangList.appendChild(div);
+      });
+
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+      totalKasir.innerText = `Total: Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    function hapusKeranjang(index) {
+      const item = keranjang[index];
+      const barangAsli = items.find(i => i.name === item.name && i.price === item.price);
+      if (barangAsli) barangAsli.stock += item.jumlah;
+      keranjang.splice(index, 1);
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+      renderKeranjang();
+    }
+
+    function clearKeranjang() {
+      if (confirm('Kosongkan seluruh keranjang?')) {
+        keranjang.forEach(item => {
+          const barangAsli = items.find(i => i.name === item.name && i.price === item.price);
+          if (barangAsli) barangAsli.stock += item.jumlah;
+        });
+        keranjang = [];
+        localStorage.setItem('items', JSON.stringify(items));
+        renderItems(items);
+        renderKeranjang();
+      }
+    }
+
+    function bayar() {
+      if (keranjang.length === 0) {
+        alert("Keranjang masih kosong!");
+        return;
+      }
+      alert("Pembayaran berhasil! Terima kasih.");
+      keranjang = [];
+      renderKeranjang();
+    }
+
+    renderItems(items);
+    renderKeranjang();
+  </script>
+</body>
+</html>
