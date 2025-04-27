@@ -14,66 +14,37 @@
       color: #333;
       display: flex;
     }
-    .container {
-      flex: 3;
-      padding: 20px;
-      max-width: 900px;
-    }
+    .container { flex: 3; padding: 20px; max-width: 900px; }
     aside.kasir {
-      flex: 1;
-      background: #fff;
-      padding: 20px;
-      border-left: 2px solid #ddd;
-      min-width: 300px;
-      height: 100vh;
-      position: sticky;
-      top: 0;
+      flex: 1; background: #fff; padding: 20px;
+      border-left: 2px solid #ddd; min-width: 300px; height: 100vh;
+      position: sticky; top: 0;
     }
-    h1, h2, h3 {
-      text-align: center;
-      color: #2c3e50;
-    }
+    h1, h2, h3 { text-align: center; color: #2c3e50; }
     form, .search-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;
     }
     input, select, button {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
+      padding: 10px; border-radius: 8px;
+      border: 1px solid #ccc; font-size: 1rem;
     }
     button {
-      background-color: #3498db;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      border: none;
+      background-color: #3498db; color: white;
+      font-weight: bold; cursor: pointer;
+      transition: background 0.3s ease; border: none;
     }
     button:hover { background-color: #2980b9; }
     ul { list-style: none; padding: 0; }
     li {
-      background: #ecf0f1;
-      margin-bottom: 10px;
-      padding: 10px 15px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
+      background: #ecf0f1; margin-bottom: 10px; padding: 10px 15px;
+      border-radius: 8px; display: flex;
+      justify-content: space-between; align-items: center; flex-wrap: wrap;
     }
     .item-left { display: flex; flex-direction: column; flex: 1; }
     .item-name { font-weight: 600; }
     .price { color: #16a085; }
     .category, .stok { font-size: 0.9rem; color: #555; }
-    .btn-group {
-      display: flex;
-      gap: 6px;
-      margin-top: 5px;
-    }
+    .btn-group { display: flex; gap: 6px; margin-top: 5px; }
     .delete-btn { background-color: #e74c3c; }
     .edit-btn { background-color: #f39c12; }
     .cart-btn { background-color: #2ecc71; }
@@ -82,21 +53,11 @@
     .cart-btn:hover { background-color: #27ae60; }
     .kasir h3 { margin-top: 0; }
     .keranjang-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      border-bottom: 1px dashed #ccc;
-      padding-bottom: 5px;
+      display: flex; justify-content: space-between;
+      margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;
     }
-    .keranjang-total {
-      margin-top: 10px;
-      font-weight: bold;
-      text-align: center;
-    }
-    .kasir button, .kasir input {
-      width: 100%;
-      margin-top: 10px;
-    }
+    .keranjang-total { margin-top: 10px; font-weight: bold; text-align: center; }
+    .kasir button, .kasir input { width: 100%; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -133,8 +94,201 @@
     <button onclick="cetakStruk()">🖨️ Cetak Struk</button>
   </aside>
   <script>
-    // JavaScript-nya seperti dijelaskan sebelumnya (tambah barang, render, bayar, cetakStruk, dsb)
-    // Untuk menjaga kerapian, bisa dilihat di file penuh
+    let items = JSON.parse(localStorage.getItem('items')) || [];
+    let keranjang = [];
+
+    const itemList = document.getElementById('itemList');
+    const keranjangList = document.getElementById('keranjangList');
+    const totalKasir = document.getElementById('totalKasir');
+
+    function renderItems(data) {
+      itemList.innerHTML = '';
+      if (data.length === 0) return itemList.innerHTML = '<li>Tidak ada barang.</li>';
+      data.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="item-left">
+            <span class="item-name">${item.name}</span>
+            <span class="price">Rp ${item.price.toLocaleString('id-ID')}</span>
+            <span class="category">Kategori: ${item.category}</span>
+            <span class="stok">Stok: ${item.stock}</span>
+          </div>
+          <div class="btn-group">
+            <button class="cart-btn" onclick="tambahKeKeranjang(${index})">Keranjang</button>
+            <button class="edit-btn" onclick="editItem(${index})">Edit</button>
+            <button class="delete-btn" onclick="deleteItem(${index})">Hapus</button>
+          </div>`;
+        itemList.appendChild(li);
+      });
+    }
+
+    function tambahKeKeranjang(index) {
+      const item = items[index];
+      if (item.stock <= 0) return alert("Stok habis!");
+      const qty = parseInt(prompt(`Jumlah untuk "${item.name}" (Stok: ${item.stock})`, 1));
+      if (isNaN(qty) || qty < 1 || qty > item.stock) return alert("Jumlah tidak valid!");
+      keranjang.push({ ...item, jumlah: qty });
+      items[index].stock -= qty;
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+      renderKeranjang();
+    }
+
+    function renderKeranjang() {
+      keranjangList.innerHTML = '';
+      if (keranjang.length === 0) return keranjangList.innerHTML = '<p>Keranjang kosong.</p>', totalKasir.innerText = 'Total: Rp 0';
+      keranjang.forEach((item, i) => {
+        const subtotal = item.price * item.jumlah;
+        keranjangList.innerHTML += `
+          <div class="keranjang-item">
+            <span>${item.name} (${item.jumlah}x)</span>
+            <span>Rp ${subtotal.toLocaleString('id-ID')}</span>
+            <button onclick="hapusKeranjang(${i})">❌</button>
+          </div>`;
+      });
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+      totalKasir.innerText = `Total: Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    function bayar() {
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+      const uang = parseInt(document.getElementById('uangBayar').value);
+      if (isNaN(uang) || uang < total) return alert("Uang tidak cukup!");
+      const kembalian = uang - total;
+      document.getElementById('hasilKembalian').innerText = `Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`;
+      alert("Pembayaran berhasil!");
+      keranjang = [];
+      renderKeranjang();
+      document.getElementById('uangBayar').value = '';
+    }
+
+    function clearKeranjang() {
+      keranjang.forEach(item => {
+        const found = items.find(i => i.name === item.name);
+        if (found) found.stock += item.jumlah;
+      });
+      keranjang = [];
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+      renderKeranjang();
+    }
+
+    function hapusKeranjang(index) {
+      const item = keranjang[index];
+      const found = items.find(i => i.name === item.name);
+      if (found) found.stock += item.jumlah;
+      keranjang.splice(index, 1);
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+      renderKeranjang();
+    }
+
+    function deleteItem(index) {
+      items.splice(index, 1);
+      localStorage.setItem('items', JSON.stringify(items));
+      renderItems(items);
+    }
+
+    function editItem(index) {
+      const item = items[index];
+      const name = prompt("Edit nama:", item.name);
+      const price = prompt("Edit harga:", item.price);
+      const stock = prompt("Edit stok:", item.stock);
+      const category = prompt("Edit kategori:", item.category);
+      if (name && price && stock && category) {
+        items[index] = {
+          name: name.trim(),
+          price: parseFloat(price),
+          stock: parseInt(stock),
+          category: category.trim()
+        };
+        localStorage.setItem('items', JSON.stringify(items));
+        renderItems(items);
+      }
+    }
+
+    function searchItems() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = items.filter(item =>
+        item.name.toLowerCase().includes(keyword) ||
+        item.category.toLowerCase().includes(keyword)
+      );
+      renderItems(filtered);
+    }
+
+    function cetakStruk() {
+      if (keranjang.length === 0) return alert("Keranjang kosong!");
+      const total = keranjang.reduce((acc, item) => acc + item.price * item.jumlah, 0);
+      const uang = parseInt(document.getElementById('uangBayar').value);
+      const kembalian = uang - total;
+      let struk = 'TOKO KELONTONG\\n----------------------\\n';
+      keranjang.forEach(item => {
+        struk += `${item.name} x${item.jumlah}\\n`;
+        struk += `@Rp ${item.price.toLocaleString('id-ID')} = Rp ${(item.price * item.jumlah).toLocaleString('id-ID')}\\n`;
+      });
+      struk += '----------------------\\n';
+      struk += `TOTAL     : Rp ${total.toLocaleString('id-ID')}\\n`;
+      if (!isNaN(uang)) {
+        struk += `UANG BAYAR: Rp ${uang.toLocaleString('id-ID')}\\n`;
+        struk += `KEMBALIAN : Rp ${kembalian.toLocaleString('id-ID')}\\n`;
+      }
+      struk += 'Terima kasih!\\n';
+      const encodedStruk = encodeURIComponent(struk);
+      window.open(`rawbt:${encodedStruk}`);
+    }
+
+    // Inisialisasi saat halaman dimuat
+    renderItems(items);
+    renderKeranjang();
   </script>
+
+
+
+
+<script>
+document.getElementById("itemForm").addEventListener("submit", function(e) {
+  e.preventDefault(); // Mencegah reload
+  const name = document.getElementById("itemName").value.trim();
+  const price = parseFloat(document.getElementById("itemPrice").value);
+  const stock = parseInt(document.getElementById("itemStock").value);
+  const category = document.getElementById("itemCategory").value;
+
+  if (name && !isNaN(price) && !isNaN(stock) && category) {
+    items.push({ name, price, stock, category });
+    localStorage.setItem("items", JSON.stringify(items));
+    renderItems(items);
+    this.reset();
+  } else {
+    alert("Semua data wajib diisi dengan benar!");
+  }
+});
+</script>
+<script>
+  function renderItems(data) {
+  const itemList = document.getElementById("itemList");
+  itemList.innerHTML = "";
+  if (data.length === 0) {
+    itemList.innerHTML = "<li>Tidak ada barang.</li>";
+    return;
+  }
+  data.forEach((item, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div class="item-left">
+        <span class="item-name">${item.name}</span>
+        <span class="price">Rp ${item.price.toLocaleString('id-ID')}</span>
+        <span class="category">Kategori: ${item.category}</span>
+        <span class="stok">Stok: ${item.stock}</span>
+      </div>
+      <div class="btn-group">
+        <button class="cart-btn" onclick="tambahKeKeranjang(${index})">Keranjang</button>
+        <button class="edit-btn" onclick="editItem(${index})">Edit</button>
+        <button class="delete-btn" onclick="deleteItem(${index})">Hapus</button>
+      </div>
+    `;
+    itemList.appendChild(li);
+  });
+}
+</script>
 </body>
 </html>
